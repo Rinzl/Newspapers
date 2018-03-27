@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Newspapers</string>
+    <string name="newspapers">Newspapers</string>
+    <string name="search">Search</string>
+    <string name="home">Home</string>
+    <string name="xa_hoi">Kinh Tế</string>
+    <string name="giao_duc">Giáo Dục</string>
+    <string name="the_thao">Thể Thao</string>
+    <string name="suc_khoe">Đời Sống</string>
+    <string name="giai_tri">Giải Trí</string>
+</resources>
