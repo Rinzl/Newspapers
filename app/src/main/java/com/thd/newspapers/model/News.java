@@ -10,12 +10,22 @@ public class News {
     private String source;
     private String imageUrl;
     private String newsUrl;
+    private boolean isFav;
 
     public News(String headline, String source, String imageUrl, String newsUrl) {
         this.headline = headline;
         this.source = source;
         this.imageUrl = imageUrl;
         this.newsUrl = newsUrl;
+        this.isFav = false;
+    }
+
+    public boolean isFav() {
+        return isFav;
+    }
+
+    public void setFav(boolean fav) {
+        isFav = fav;
     }
 
     public String getHeadline() {
@@ -50,7 +60,9 @@ public class News {
     public void setNewsUrl(String newsUrl) {
         this.newsUrl = newsUrl;
     }
-
+    public boolean isNull() {
+        return headline.isEmpty() || source.isEmpty() || imageUrl.isEmpty() || newsUrl.isEmpty();
+    }
     @Override
     public String toString() {
         return "News{" +

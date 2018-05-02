@@ -37,4 +37,5 @@ dependencies {
     }
     compile 'com.mikepenz:fontawesome-typeface:5.0.6.0@aar'
     compile 'com.android.support:customtabs:27.1.0'
+    compile 'com.github.varunest:sparkbutton:1.0.5'
 }

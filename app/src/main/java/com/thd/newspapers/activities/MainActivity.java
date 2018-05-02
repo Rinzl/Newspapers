@@ -1,16 +1,19 @@
 package com.thd.newspapers.activities;
 
-import android.content.Intent;
-import android.graphics.Color;
+import android.content.DialogInterface;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -32,10 +35,9 @@ import com.thd.newspapers.R;
 import com.thd.newspapers.adapter.NewsAdapter;
 import com.thd.newspapers.model.News;
 import com.thd.newspapers.utils.CrawlerAsyncTask;
-import com.thd.newspapers.utils.GlideApp;
+import com.thd.newspapers.utils.SqliteDB;
 
 import java.util.ArrayList;
-import java.util.Currency;
 
 public class MainActivity extends AppCompatActivity
         implements MaterialSearchView.OnQueryTextListener,
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity
         Drawer.OnDrawerItemClickListener{
 
     // variable declaration
+
     public static String INTENT_WEBVIEW_KEY = "IntentWebViewKey";
     public static String INTENT_TITLE_KEY = "TITLE_KEY";
     public static String HOME_URL = "tin-moi.epi";
@@ -52,7 +55,7 @@ public class MainActivity extends AppCompatActivity
     public static String KINHTE_URL = "kinh-te.epi";
     public static String GIAODUC_URL = "giao-duc.epi";
     public static String THETHAO_URL = "the-thao.epi";
-    public static String SUCKHOE_URL = "doi-song.epi";
+    public static String DOISONG_URL = "doi-song.epi";
     public static String GIAITRI_URL = "giai-tri.epi";
     public static String XAHOI_URL = "xa-hoi.epi";
 
@@ -76,16 +79,29 @@ public class MainActivity extends AppCompatActivity
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(false);
-        init();
+        init(savedInstanceState);
         currentURL = HOME_URL;
-        final IProfile profile = new ProfileDrawerItem().withName("Mike Penz").withEmail("mikepenz@gmail.com").withIcon(R.drawable.user);
-        header = new AccountHeaderBuilder()
-                .withActivity(this)
-                .withCompactStyle(true)
-                .withHeaderBackground(R.drawable.bg)
-                .addProfiles(profile)
-                .withSavedInstance(savedInstanceState)
-                .build();
+        tvTitle.setText(R.string.newspapers);
+        if (isNetworkConnected()) {
+            refreshLayout.setRefreshing(true);
+            asyncTask = new CrawlerAsyncTask();
+            asyncTask.setOnCompleteTask(this);
+            asyncTask.execute(HOME_URL);
+        } else {
+            createNoInternetDialog();
+        }
+    }
+
+    private void init(Bundle Save) {
+        rvNews = findViewById(R.id.rvNews);
+        tvTitle = toolbar.findViewById(R.id.tvTitle);
+        searchView = findViewById(R.id.mysearch);
+        refreshLayout = findViewById(R.id.refreshLayout);
+        refreshLayout.setColorSchemeResources(R.color.refresh_color_1, R.color.refresh_color_2, R.color.refresh_color_3);
+        searchView.clearFocus();
+        searchView.setOnQueryTextListener(this);
+        refreshLayout.setOnRefreshListener(this);
+
         result =new DrawerBuilder()
                 .withActivity(this)
                 .withAccountHeader(header)
@@ -107,26 +123,16 @@ public class MainActivity extends AppCompatActivity
                         new PrimaryDrawerItem().withName("About").withIcon(FontAwesome.Icon.faw_info_circle)
                 )
                 .withOnDrawerItemClickListener(this)
-                .withSavedInstance(savedInstanceState)
+                .withSavedInstance(Save)
                 .build();
-        tvTitle.setText(R.string.newspapers);
-        searchView.clearFocus();
-        searchView.setOnQueryTextListener(this);
-        asyncTask = new CrawlerAsyncTask();
-        asyncTask.setOnCompleteTask(this);
-        asyncTask.execute(HOME_URL);
-        refreshLayout.setOnRefreshListener(this);
-        if (savedInstanceState == null ) {
-            refreshLayout.setRefreshing(true);
-        }
-        refreshLayout.setColorSchemeResources(R.color.refresh_color_1, R.color.refresh_color_2, R.color.refresh_color_3);
-    }
-
-    private void init() {
-        rvNews = findViewById(R.id.rvNews);
-        tvTitle = toolbar.findViewById(R.id.tvTitle);
-        searchView = findViewById(R.id.mysearch);
-        refreshLayout = findViewById(R.id.refreshLayout);
+        final IProfile profile = new ProfileDrawerItem().withName("Mike Penz").withEmail("mikepenz@gmail.com").withIcon(R.drawable.user);
+        header = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withCompactStyle(true)
+                .withHeaderBackground(R.drawable.bg)
+                .addProfiles(profile)
+                .withSavedInstance(Save)
+                .build();
     }
 
     @Override
@@ -140,6 +146,12 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onQueryTextSubmit(String query) {
+        refreshLayout.setRefreshing(true);
+        currentURL = "tim-kiem/" + query.replace(" ", "-") +".epi" ;
+        asyncTask = new CrawlerAsyncTask();
+        asyncTask.setOnCompleteTask(MainActivity.this);
+        asyncTask.execute(currentURL);
+        Log.i("querySubmitted",currentURL);
         return false;
     }
 
@@ -185,68 +197,70 @@ public class MainActivity extends AppCompatActivity
         asyncTask.execute(currentURL);
     }
 
+    // drawer click
     @Override
     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
         asyncTask = new CrawlerAsyncTask();
         asyncTask.setOnCompleteTask(MainActivity.this);
         switch (position) {
-            case 1 : {
+            case 0 : {
                 asyncTask.execute(HOME_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = HOME_URL;
                 tvTitle.setText(R.string.home);
                 break;
             }
-            case 2 : {
+            case 1 : {
                 asyncTask.execute(XAHOI_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = XAHOI_URL;
                 tvTitle.setText("Xã Hội");
                 break;
             }
-            case 3 : {
+            case 2: {
                 asyncTask.execute(THEGIOI_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = THEGIOI_URL;
+                tvTitle.setText(R.string.the_gioi);
                 break;
             }
-            case 4 : {
+            case 3 : {
                 asyncTask.execute(KINHTE_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = KINHTE_URL;
-                tvTitle.setText(R.string.xa_hoi);
+                tvTitle.setText(R.string.kinh_te);
 
                 break;
             }
-            case 5 : {
+            case 4 : {
                 asyncTask.execute(VANHOA_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = VANHOA_URL;
                 tvTitle.setText("Văn Hóa");
                 break;
             }
-            case 6 : {
+            case 5 : {
                 asyncTask.execute(GIAODUC_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = GIAODUC_URL;
                 tvTitle.setText(R.string.giao_duc);
                 break;
             }
-            case 7 : {
+            case 6 : {
                 asyncTask.execute(THETHAO_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = THETHAO_URL;
                 tvTitle.setText(R.string.the_thao);
                 break;
             }
-            case 8 : {
-                asyncTask.execute(SUCKHOE_URL);
+            case 7 : {
+                asyncTask.execute(DOISONG_URL);
                 refreshLayout.setRefreshing(true);
-                currentURL = SUCKHOE_URL;
-                tvTitle.setText(R.string.suc_khoe);
+                currentURL = DOISONG_URL;
+                tvTitle.setText(R.string.doi_song);
                 break;
             }
-            case 9 : {
+            case 8 : {
                 asyncTask.execute(GIAITRI_URL);
                 refreshLayout.setRefreshing(true);
                 currentURL = GIAITRI_URL;
@@ -258,5 +272,27 @@ public class MainActivity extends AppCompatActivity
             }
         }
         return false;
+    }
+
+    public boolean isNetworkConnected() {
+        ConnectivityManager conn = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo info = conn.getActiveNetworkInfo();
+        return info != null && info.isConnected();
+    }
+    public void createNoInternetDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder
+                .setMessage("No Internet")
+                .setTitle("Error")
+                .setCancelable(false)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }

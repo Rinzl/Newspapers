@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -31,6 +33,19 @@
                 android:text="Headline"
                 android:textSize="17sp"
                 android:textColor="@color/colorText"/>
+
+            <com.varunest.sparkbutton.SparkButton
+                android:id="@+id/sparkButton"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_alignParentBottom="true"
+                android:layout_toEndOf="@id/ivPreview"
+                android:layout_marginTop="5dp"
+                app:sparkbutton_activeImage="@drawable/ic_heart_on"
+                app:sparkbutton_iconSize="13dp"
+                app:sparkbutton_inActiveImage="@drawable/ic_heart_off"
+                app:sparkbutton_primaryColor="@color/heart_primary_color"
+                app:sparkbutton_secondaryColor="@color/heart_secondary_color"/>
             <TextView
                 android:id="@+id/tvSource"
                 android:layout_width="wrap_content"
