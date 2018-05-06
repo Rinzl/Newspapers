@@ -119,6 +119,7 @@ public class MainActivity extends AppCompatActivity
                         new PrimaryDrawerItem().withName("Giải Trí").withIcon(FontAwesome.Icon.faw_gamepad),
                         new DividerDrawerItem(),
                         new PrimaryDrawerItem().withName("Cài Đặt").withIcon(FontAwesome.Icon.faw_cog),
+                        new PrimaryDrawerItem().withName("Yêu Thích").withIcon(FontAwesome.Icon.faw_heart),
                         new PrimaryDrawerItem().withName("Trợ Giúp").withIcon(FontAwesome.Icon.faw_magic),
                         new PrimaryDrawerItem().withName("About").withIcon(FontAwesome.Icon.faw_info_circle)
                 )
@@ -172,26 +173,16 @@ public class MainActivity extends AppCompatActivity
         NewsAdapter adapter = new NewsAdapter(newsList, MainActivity.this);
         rvNews.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false));
         rvNews.setItemAnimator(new DefaultItemAnimator());
-
-        adapter.setListener(new NewsAdapter.OnclickListener() {
-            @Override
-            public void onClick(int position) {
-//                Intent intent = new Intent(MainActivity.this,WebViewActivity.class);
-//                intent.putExtra(INTENT_WEBVIEW_KEY, newsList.get(position).getNewsUrl());
-//                intent.putExtra(INTENT_TITLE_KEY, newsList.get(position).getSource());
-//                startActivity(intent);
-                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-                builder.setToolbarColor(getResources().getColor(R.color.primary));
-                CustomTabsIntent customTabsIntent = builder.build();
-                customTabsIntent.launchUrl(MainActivity.this, Uri.parse(newsList.get(position).getNewsUrl()));
-            }
-        });
         rvNews.setAdapter(adapter);
         if(refreshLayout.isRefreshing()) refreshLayout.setRefreshing(false);
     }
 
     @Override
     public void onRefresh() {
+        if (currentURL.equals("like")) {
+            refreshLayout.setRefreshing(false);
+            return;
+        }
         asyncTask = new CrawlerAsyncTask();
         asyncTask.setOnCompleteTask(MainActivity.this);
         asyncTask.execute(currentURL);
@@ -266,6 +257,14 @@ public class MainActivity extends AppCompatActivity
                 currentURL = GIAITRI_URL;
                 tvTitle.setText(R.string.giai_tri);
                 break;
+            }
+            case 11 : {
+                NewsAdapter adapter = new NewsAdapter(null, MainActivity.this);
+                rvNews.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false));
+                rvNews.setItemAnimator(new DefaultItemAnimator());
+                rvNews.setAdapter(adapter);
+                tvTitle.setText(R.string.yeu_thich);
+                currentURL = "like";
             }
             default: {
                 break;

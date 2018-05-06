@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.thd.newspapers.model.News;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Created by Tran Hai Dang on 5/2/2018.
@@ -26,7 +27,7 @@ public class SqliteDB extends SQLiteOpenHelper {
     private static final String DB_COLUMN_NEWS_URL = "news_url";
 
     private static final String SQL_CREATE_TABLE = "CREATE TABLE " + DB_TABLE + "("
-            + DB_COLUMN_ID +" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+            + DB_COLUMN_ID +" INTEGER PRIMARY KEY NOT NULL, "
             + DB_COLUMN_HEADLINE + " TEXT, "
             + DB_COLUMN_IMAGE_SOURCE + " TEXT, "
             + DB_COLUMN_NEWS_SOURCE + " TEXT, "
@@ -54,20 +55,28 @@ public class SqliteDB extends SQLiteOpenHelper {
             String imgSource = res.getString(res.getColumnIndex(DB_COLUMN_IMAGE_SOURCE));
             String source = res.getString(res.getColumnIndex(DB_COLUMN_NEWS_SOURCE));
             String newsURL = res.getString(res.getColumnIndex(DB_COLUMN_NEWS_URL));
+            int id = res.getInt(res.getColumnIndex(DB_COLUMN_ID));
             News n = new News(headline,source,imgSource,newsURL);
             n.setFav(true);
+            n.setId(id);
             newsList.add(n);
         }
         res.close();
+        Collections.reverse(newsList);
         return newsList;
     }
     public void insertToDB(News news) {
         SQLiteDatabase database = getWritableDatabase();
         ContentValues contentValues = new ContentValues();
+        contentValues.put(DB_COLUMN_ID, news.getId());
         contentValues.put(DB_COLUMN_HEADLINE, news.getHeadline());
         contentValues.put(DB_COLUMN_IMAGE_SOURCE, news.getImageUrl());
         contentValues.put(DB_COLUMN_NEWS_SOURCE, news.getSource());
         contentValues.put(DB_COLUMN_NEWS_URL, news.getNewsUrl());
         database.insert(DB_TABLE,null, contentValues);
+    }
+    public void delete(long id) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(DB_TABLE,DB_COLUMN_ID+" = "+id,null);
     }
 }

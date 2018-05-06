@@ -24,11 +24,15 @@ class Crawler {
         Elements elements = doc.select("div.story").not("is-pr");
         int count = 0;
         for (Element e : elements) {
+            long id;
             String url = e.select("a[href]:has(i)").attr("abs:href");
             String headline = e.select("a[href]").attr("title");
             String imgUrl = e.select("img").attr("src");
             String source = e.select("a.source").text();
+            if (!e.attr("data-aid").isEmpty()) id = Long.parseLong(e.attr("data-aid"));
+            else id = 0;
             News news = new News(headline,source,imgUrl,url);
+            news.setId(id);
             if (!news.isNull()) {
                 newsList.add(news);
             }

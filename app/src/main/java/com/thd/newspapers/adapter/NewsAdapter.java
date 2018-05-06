@@ -1,7 +1,10 @@
 package com.thd.newspapers.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.customtabs.CustomTabsIntent;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.thd.newspapers.activities.MainActivity;
 import com.thd.newspapers.model.News;
 import com.thd.newspapers.R;
 import com.thd.newspapers.utils.GlideApp;
@@ -30,21 +34,26 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     private Context context;
     private List<News> favoriteNews;
     private SqliteDB db;
-    public interface OnclickListener {
-        void onClick(int position);
-    }
-    private OnclickListener listener;
+    private int peakID;
+    private int mode;
+//    public interface OnclickListener {
+//        void onClick(int position);
+//    }
+//    private OnclickListener listener;
 
     public NewsAdapter(List<News> newsList, Context context) {
         this.db = new SqliteDB(context);
-        this.newsList = newsList;
         this.context = context;
         this.favoriteNews = db.getAllFavoriteNews();
+        this.newsList = newsList == null ? favoriteNews : newsList;
+        if (newsList == null) mode = 1;
+        else mode = -1;
+        System.out.println(favoriteNews);
     }
 
-    public void setListener(OnclickListener listener) {
-        this.listener = listener;
-    }
+//    public void setListener(OnclickListener listener) {
+//        this.listener = listener;
+//    }
 
     @NonNull
     @Override
@@ -89,12 +98,14 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (listener != null) {
-                        int position = getAdapterPosition();
-                        if (position != RecyclerView.NO_POSITION) {
-                            Log.i("newsItemClick", "onClick: "+newsList.get(position));
-                            listener.onClick(position);
-                        }
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        Log.i("newsItemClick", "onClick: "+newsList.get(position));
+                        //listener.onClick(position);
+                        CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+                        builder.setToolbarColor(Color.parseColor("#3F51B5"));
+                        CustomTabsIntent customTabsIntent = builder.build();
+                        customTabsIntent.launchUrl(context, Uri.parse(newsList.get(position).getNewsUrl()));
                     }
                 }
             });
@@ -104,7 +115,11 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
                     if (buttonState) {
                         db.insertToDB(newsList.get(getAdapterPosition()));
                     } else {
-
+                        db.delete(newsList.get(getAdapterPosition()).getId());
+                        if (mode==1) {
+                            newsList.remove(getAdapterPosition());
+                            notifyItemRemoved(getAdapterPosition());
+                        }
                     }
                 }
 
